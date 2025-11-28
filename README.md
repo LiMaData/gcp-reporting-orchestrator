@@ -14,7 +14,8 @@ The **GCP Reporting Orchestrator** is an autonomous AI agent system designed to 
     *   **Marketing Ops**: Actionable tactical insights.
     *   **Data Team**: Technical details, code, and statistical diagnostics.
 *   **Multi-Channel Distribution**: Automatically sends reports via **Email** (SMTP) and **Microsoft Teams** webhooks.
-*   **Interactive UI**: A premium, unbranded Streamlit interface for configuring and monitoring the pipeline.
+*   **Fully Automated**: Runs on a weekly schedule using **Google Cloud Functions** and **Cloud Scheduler**.
+*   **Interactive UI**: A premium, unbranded Streamlit interface for ad-hoc analysis and monitoring.
 
 ---
 
@@ -50,8 +51,11 @@ The pipeline is composed of five specialized AI agents working in sequence:
 *   **Frontend**: [Streamlit](https://streamlit.io/)
 *   **Backend**: Python 3.10+
 *   **Data Warehouse**: [Snowflake](https://www.snowflake.com/) (Snowpark Python)
-*   **AI Models**: Google Gemini 2.5 Flash, Anthropic Claude 3.5 Sonnet
-*   **Cloud Storage**: Google Cloud Storage (GCS)
+*   **AI Models**: Google Gemini 2.5 Flash
+*   **Cloud Infrastructure**: 
+    *   Google Cloud Functions (2nd Gen)
+    *   Google Cloud Scheduler
+    *   Google Cloud Storage (GCS)
 
 ---
 
@@ -61,70 +65,70 @@ The pipeline is composed of five specialized AI agents working in sequence:
 
 *   Python 3.10 or higher
 *   A Snowflake Account with Snowpark enabled
-*   Google Cloud Project (for Gemini API and GCS)
+*   Google Cloud Project (for Gemini API, Cloud Functions, and GCS)
+*   Google Cloud CLI (`gcloud`) installed
 
-### Installation
+### 1. Local Development (Streamlit UI)
 
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/your-repo/gcp-reporting-orchestrator.git
-    cd gcp-reporting-orchestrator
-    ```
+Use this for testing, development, and ad-hoc analysis.
 
-2.  **Install dependencies**:
+1.  **Install dependencies**:
     ```bash
     pip install -r requirements-dev.txt
     ```
 
-3.  **Configure Environment**:
-    Create a `.env` file in the root directory with the following credentials:
+2.  **Configure Environment**:
+    Create a `.env` file in the root directory (see `.env.example`).
 
-    ```ini
-    # Snowflake Credentials
-    SNOWFLAKE_ACCOUNT=your_account
-    SNOWFLAKE_USER=your_user
-    SNOWFLAKE_PASSWORD=your_password
-    SNOWFLAKE_WAREHOUSE=your_warehouse
-    SNOWFLAKE_DATABASE=your_db
-    SNOWFLAKE_SCHEMA=your_schema
-    SNOWFLAKE_ROLE=your_role
-
-    # Google Cloud / Gemini
-    GOOGLE_API_KEY=your_gemini_api_key
-    GCP_PROJECT_ID=your_project_id
-    GCS_BUCKET_NAME=your_bucket_name
-
-    # Email (SMTP)
-    SMTP_SERVER=smtp.office365.com
-    SMTP_PORT=587
-    SMTP_USERNAME=your_email@domain.com
-    SMTP_PASSWORD=your_password
-    EMAIL_SENDER=your_email@domain.com
-
-    # Recipients
-    CMO_EMAIL=cmo@domain.com
-    DATA_TEAM_GCS_NOTIFY_EMAIL=data@domain.com
-    ```
-
----
-
-## 🖥️ Usage
-
-1.  **Launch the UI**:
+3.  **Launch the UI**:
     ```bash
     python -m streamlit run src/ui/app.py
     ```
 
-2.  **Run Analysis**:
+4.  **Run Analysis**:
     *   Open your browser to `http://localhost:8501`.
     *   Enter your **Business Question**.
-    *   Select the **Method** (Logistic Regression).
     *   Click **RUN ANALYSIS**.
 
-3.  **View Results**:
-    *   Watch the live progress bar as agents execute.
-    *   View key metrics (Lift, Significance) on the dashboard.
-    *   Check your email/Teams for the delivered reports.
+### 2. Automated Deployment (Cloud Functions)
+
+Use this to run the pipeline automatically on a schedule (e.g., every Monday).
+
+1.  **Deploy the Cloud Function**:
+    Run the following command (replace placeholders with your actual values):
+
+    ```bash
+    gcloud functions deploy weekly-analysis-orchestrator \
+        --gen2 \
+        --runtime=python310 \
+        --region=us-central1 \
+        --source=. \
+        --entry-point=weekly_analysis_entry \
+        --trigger-http \
+        --allow-unauthenticated \
+        --timeout=3600s \
+        --memory=2GiB \
+        --set-env-vars="SNOWFLAKE_ACCOUNT=...,SNOWFLAKE_USER=...,SNOWFLAKE_PASSWORD=...,GOOGLE_API_KEY=...,TEAMS_WEBHOOK_URL=...,GCS_BUCKET_NAME=...SMTP_SERVER=...,SMTP_USERNAME=...,SMTP_PASSWORD=...,CMO_EMAIL=...,DATA_TEAM_GCS_NOTIFY_EMAIL=..."
+    ```
+
+2.  **Create the Schedule**:
+    Set up a weekly trigger (e.g., every Monday at 9 AM):
+
+    ```bash
+    gcloud scheduler jobs create http weekly-analysis-job \
+        --schedule="0 9 * * 1" \
+        --uri="YOUR_FUNCTION_URL" \
+        --http-method=POST \
+        --message-body='{"business_question": "Weekly Automated Check: Email Campaign Lift"}' \
+        --headers="Content-Type=application/json" \
+        --location=us-central1
+    ```
+
+3.  **Manual Trigger**:
+    Test the automation immediately:
+    ```bash
+    gcloud scheduler jobs run weekly-analysis-job --location=us-central1
+    ```
 
 ---
 
@@ -134,18 +138,14 @@ The pipeline is composed of five specialized AI agents working in sequence:
 gcp-reporting-orchestrator/
 ├── src/
 │   ├── agents/             # The 5 AI Agents
-│   │   ├── analyst_agent.py
-│   │   ├── executor_agent.py
-│   │   ├── interpreter_agent.py
-│   │   ├── report_agent.py
-│   │   └── distributor_agent.py
+│   ├── functions/          # Cloud Function Entry Points
+│   │   └── weekly_trigger/
 │   ├── ui/                 # Streamlit Application
-│   │   ├── app.py
-│   │   └── style.css
-│   └── orchestrator.py     # CLI Entry point
-├── docs/                   # Documentation
-├── setup/                  # Database setup scripts
-├── tests/                  # Unit tests
-├── .env                    # Configuration (GitIgnored)
-└── requirements-dev.txt    # Python dependencies
+│   └── orchestrator.py     # Main Pipeline Logic
+├── docs/                   # Documentation & Guides
+├── infrastructure/         # Terraform & Setup Scripts
+├── .env                    # Local Configuration (GitIgnored)
+├── main.py                 # Cloud Function Root Entry Point
+├── requirements.txt        # Production Dependencies
+└── requirements-dev.txt    # Development Dependencies
 ```

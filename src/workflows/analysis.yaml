@@ -1,0 +1,55 @@
+main:
+  params: [input]
+  steps:
+    - init:
+        assign:
+          - project: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+          - location: "us-central1"
+          - analysis_function_url: "https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/analyze_data"
+          - load_function_url: "https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/load_results"
+
+    - call_analysis:
+        call: http.post
+        args:
+          url: ${analysis_function_url}
+          body:
+            input: ${input}
+        result: analysis_result
+
+    - create_callback:
+        call: events.create_callback_endpoint
+        args:
+            http_callback_method: "POST"
+        result: callback_details
+
+    - notify_validator:
+        # In a real app, this would send an email with the link to the UI
+        # The UI URL would include the callback_url as a query parameter
+        return: 
+            status: "Waiting for approval"
+            data: ${analysis_result.body.data}
+            callback_url: ${callback_details.url}
+
+    - wait_for_approval:
+        call: events.await_callback
+        args:
+            callback: ${callback_details}
+            timeout: 86400 # 24 hours
+        result: approval_result
+
+    - check_approval:
+        switch:
+            - condition: ${approval_result.http_request.body.approved == true}
+              next: load_data
+        next: end_workflow
+
+    - load_data:
+        call: http.post
+        args:
+            url: ${load_function_url}
+            body:
+                data: ${analysis_result.body.data}
+        result: load_result
+
+    - end_workflow:
+        return: "Workflow completed"

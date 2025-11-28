@@ -1,0 +1,13 @@
+functions-framework==3.*
+google-cloud-storage
+google-generativeai
+snowflake-connector-python
+snowflake-snowpark-python
+pandas
+numpy
+scipy
+scikit-learn
+python-dotenv
+requests
+fpdf
+xhtml2pdf

@@ -1,0 +1,5 @@
+project_id        = "your-gcp-project-id"
+region            = "us-central1"
+snowflake_account = "your-snowflake-account"
+snowflake_user    = "your-snowflake-user"
+snowflake_password = "your-snowflake-password"

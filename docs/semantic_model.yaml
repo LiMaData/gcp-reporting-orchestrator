@@ -1,0 +1,191 @@
+# semantic_model_mvp_v2.yaml - Updated to match actual table structure
+table:
+  name: PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_DUMMY
+  description: "Customer incrementality analysis dataset for email marketing campaigns"
+  
+columns:
+  # Identifier
+  cdb_cust_id:
+    type: INTEGER
+    description: "Customer database ID - unique identifier"
+    business_meaning: "Primary key for customer records"
+  
+  # Geographic
+  country:
+    type: VARCHAR
+    description: "Country code (e.g., GB, US, FR)"
+    business_meaning: "Customer location for regional analysis"
+  
+  # Target Variables
+  converted:
+    type: INTEGER
+    description: "Binary outcome variable: 1 if customer purchased, 0 otherwise"
+    business_meaning: "Conversion event - car purchase with VIN registered"
+    values: [0, 1]
+    
+  purchase_date:
+    type: DATE
+    description: "Date of car purchase (NULL if not converted)"
+    
+  received_email:
+    type: INTEGER
+    description: "Binary treatment variable: 1 if customer received email, 0 otherwise"
+    business_meaning: "Treatment indicator for incrementality analysis"
+    values: [0, 1]
+  
+  email_send_date:
+    type: DATE
+    description: "Date of most recent email sent (NULL if no email received)"
+  
+  email_subject_type:
+    type: VARCHAR
+    description: "Type of email campaign (Campaign, Program, Other)"
+    values: ["Campaign", "Program", "Other"]
+  
+  # Email Engagement (90-day window)
+  email_opens_last_90_days:
+    type: INTEGER
+    description: "Number of emails opened in 90 days before conversion/cutoff"
+    business_meaning: "Email engagement metric for propensity modeling"
+    
+  email_clicks_last_90_days:
+    type: INTEGER
+    description: "Number of email link clicks in 90 days before conversion/cutoff"
+    business_meaning: "Strong engagement signal - indicates intent"
+  
+  # Customer Profile
+  customer_segment:
+    type: VARCHAR
+    description: "CRM-defined customer status"
+    business_meaning: "Customer lifecycle stage"
+    values: ["Customer", "Lapsed", "Non-Customer", "Prospect"]
+  
+  recency_bin:
+    type: VARCHAR
+    description: "Time since last interaction"
+    values: ["≤1y", "1-2y", ">2y"]
+    
+  total_purchases:
+    type: INTEGER
+    description: "Lifetime purchase count for this customer"
+    business_meaning: "Historical engagement indicator"
+  
+  days_since_last_service:
+    type: INTEGER
+    description: "Days since last service appointment"
+    
+  age_group:
+    type: VARCHAR
+    description: "Age category derived from date of birth"
+    values: ["Young Adult (18-24)", "Middle Adult (25-35)", "Adult (36-60)", "Senior (60+)", "No age data"]
+  
+  gender:
+    type: VARCHAR
+    description: "Customer gender"
+    values: ["M", "F", "U"]  # Male, Female, Unknown
+  
+  region:
+    type: VARCHAR
+    description: "Geographic region within country"
+    values: ["N", "S", "E", "W"]  # North, South, East, West
+  
+  urban_rural:
+    type: VARCHAR
+    description: "Urban or rural location"
+    values: ["E", "M", "W"]  # Appears to be location codes
+  
+  # Behavioral Indicators
+  weekend_flag:
+    type: INTEGER
+    description: "1 if email sent on Saturday/Sunday, 0 otherwise"
+    values: [0, 1]
+    
+  holiday_season:
+    type: INTEGER
+    description: "1 if email sent within national holiday period, 0 otherwise"
+    values: [0, 1]
+  
+  website_visits_last_90_days:
+    type: INTEGER
+    description: "Number of website visits in last 90 days"
+  
+  quote_requested:
+    type: INTEGER
+    description: "1 if customer requested a quote, 0 otherwise"
+    values: [0, 1]
+  
+  test_drive_booked:
+    type: INTEGER
+    description: "1 if customer booked a test drive, 0 otherwise"
+    values: [0, 1]
+  
+  loyalty_tier:
+    type: VARCHAR
+    description: "Customer loyalty program tier"
+    values: ["Silver", "Gold", "Platinum"]
+  
+  # Temporal
+  reference_date:
+    type: DATE
+    description: "Analysis anchor date: purchase date for converters, email send date for non-converters"
+    business_meaning: "Used to define observation window for incrementality analysis"
+  
+  period_active_days:
+    type: INTEGER
+    description: "Number of days in the active observation period"
+  
+  extract_date:
+    type: DATE
+    description: "Date when data was extracted from source system"
+
+# Business Metrics
+metrics:
+  conversion_rate:
+    formula: "SUM(converted) / COUNT(*)"
+    description: "Percentage of customers who purchased"
+    
+  incremental_lift:
+    formula: "(conversion_rate_treated - conversion_rate_control) / conversion_rate_control"
+    description: "Percentage lift in conversions attributable to email"
+    
+  email_engagement_rate:
+    formula: "SUM(CASE WHEN email_opens_last_90_days > 0 THEN 1 ELSE 0 END) / SUM(received_email)"
+    description: "Percentage of email recipients who opened at least once"
+
+# Analysis Guidelines
+analysis_notes:
+  incrementality_method: "Propensity Score Matching or Difference-in-Differences"
+  treatment_variable: "received_email"
+  outcome_variable: "converted"
+  key_covariates: 
+    - "customer_segment"
+    - "age_group"
+    - "total_purchases"
+    - "recency_bin"
+    - "email_opens_last_90_days"
+    - "email_clicks_last_90_days"
+    - "website_visits_last_90_days"
+    - "loyalty_tier"
+  optional_covariates:
+    - "gender"
+    - "region"
+    - "country"
+    - "days_since_last_service"
+    - "quote_requested"
+    - "test_drive_booked"
+  causal_question: "Does sending emails cause incremental conversions beyond baseline?"
+  
+# Data characteristics
+data_characteristics:
+  total_rows: 10000
+  treatment_proportion: 0.70
+  baseline_conversion_rate: 0.12
+  expected_treatment_effect: 0.03
+
+# Required libraries
+required_libraries:
+  - numpy
+  - pandas
+  - scipy
+  - sklearn
+  - statsmodels

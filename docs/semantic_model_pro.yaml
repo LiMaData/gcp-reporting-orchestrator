@@ -1,0 +1,2148 @@
+# ============================================================================
+# SEMANTIC MODEL: Incrementality Analysis - PRODUCTION VERSION
+# ============================================================================
+# Version: 2.0 (Production)
+# Last Updated: 2024-11-25
+# Owner: Marketing Analytics Team
+# Contact: analytics-team@company.com
+# Purpose: Production semantic layer for email marketing incrementality analysis
+# Classification: CONFIDENTIAL - Internal Use Only
+# ============================================================================
+
+# ============================================================================
+# METADATA & GOVERNANCE
+# ============================================================================
+metadata:
+  # Version Control
+  version: "2.0"
+  schema_version: "2024.11"
+  created_date: "2024-11-24"
+  last_updated: "2024-11-25"
+  next_review_date: "2025-02-25"
+  
+  # Ownership & Contacts
+  owner: "Marketing Analytics Team"
+  technical_owner: "Data Engineering Team"
+  business_owner: "VP Marketing"
+  contact_email: "analytics-team@company.com"
+  slack_channel: "#marketing-analytics"
+  
+  # Classification & Security
+  data_classification: "CONFIDENTIAL"
+  security_level: "Internal"
+  contains_pii: false
+  contains_phi: false
+  gdpr_relevant: true
+  ccpa_relevant: true
+  
+  # Usage & Purpose
+  use_case: "Incrementality Analysis - Email Marketing Campaigns"
+  analysis_type: "Causal Inference"
+  primary_stakeholders: ["CMO", "Marketing Operations", "Data Science Team"]
+  
+  # Refresh & Updates
+  refresh_frequency: "Weekly"
+  refresh_schedule: "Every Monday at 06:00 UTC"
+  refresh_duration_estimate: "2-3 hours"
+  last_successful_refresh: "2024-11-25T06:00:00Z"
+  
+  # Documentation
+  documentation_url: "https://wiki.company.com/incrementality-analysis"
+  jira_epic: "ANALYTICS-1234"
+  confluence_page: "https://confluence.company.com/incrementality"
+  
+  # Approvals
+  approved_by:
+    - name: "Jane Doe"
+      role: "VP Marketing"
+      date: "2024-11-20"
+    - name: "John Smith"
+      role: "Chief Data Officer"
+      date: "2024-11-21"
+  
+  # Change Log
+  changelog:
+    - version: "2.0"
+      date: "2024-11-25"
+      author: "Data Engineering Team"
+      changes: ["Added production features", "Enhanced data quality rules", "Added monitoring"]
+    - version: "1.0"
+      date: "2024-11-24"
+      author: "Analytics Team"
+      changes: ["Initial version", "Basic semantic layer"]
+
+# ============================================================================
+# ENVIRONMENT CONFIGURATION
+# ============================================================================
+environments:
+  development:
+    database: "DEV_MARCOM_DB"
+    schema: "VML_MAP_SANDBOX"
+    warehouse: "DEV_WAREHOUSE"
+    table: "INCREMENTALITY_ANALYSIS_DUMMY"
+    stages_schema: "VML_MAP_SANDBOX"  # Stages in same schema as table
+    
+  staging:
+    database: "STAGING_MARCOM_DB"
+    schema: "VML_MAP_SANDBOX"
+    warehouse: "STAGING_WAREHOUSE"
+    table: "INCREMENTALITY_ANALYSIS"
+    stages_schema: "VML_MAP_SANDBOX"
+    
+  production:
+    database: "PLAYGROUND_LM"
+    schema: "GCP_REPORTING_ORCHESTRATOR"
+    warehouse: "TEST"
+    table: "INCREMENTALITY_ANALYSIS_DUMMY"
+    stages_schema: "GCP_REPORTING_ORCHESTRATOR"  # ✅ Stages in SAME schema as table
+    
+  # Current Active Environment
+  active: "production"
+  
+  # Schema Configuration Details
+  schema_structure:
+    note: |
+      ✅ SIMPLIFIED STRUCTURE: Everything in GCP_REPORTING_ORCHESTRATOR schema!
+      - Stages location: PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.SEMANTIC_MODELS
+      - Table location: PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_DUMMY
+      
+      All resources in one schema for simpler permissions and organization.
+      
+      When accessing stages: @PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.SEMANTIC_MODELS
+      When accessing table: PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_DUMMY
+      
+      GCS Bucket: gs://incrementality-pipeline-gcp-reporting-orchestrator
+
+# ============================================================================
+# TABLE DEFINITION
+# ============================================================================
+table:
+  # Core Identifiers
+  database: "PLAYGROUND_LM"
+  schema: "GCP_REPORTING_ORCHESTRATOR"
+  name: "INCREMENTALITY_ANALYSIS_DUMMY"
+  full_path: "PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_DUMMY"
+  
+  # Stages Configuration (SAME Schema as table!)
+  stages_database: "PLAYGROUND_LM"
+  stages_schema: "GCP_REPORTING_ORCHESTRATOR"
+  stages:
+    semantic_models: "@PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.SEMANTIC_MODELS"
+    generated_code: "@PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.GENERATED_CODE"
+    analysis_results: "@PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.ANALYSIS_RESULTS"
+    reports: "@PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.REPORTS"
+    audit_logs: "@PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.AUDIT_LOGS"
+  
+  # GCS Configuration
+  gcs_bucket: "gs://incrementality-pipeline-gcp-reporting-orchestrator"
+  
+  # Table Properties
+  type: "fact_table"
+  grain: "One row per customer per analysis period"
+  row_count_estimate: 150000
+  row_count_actual: null  # Updated by ETL
+  update_frequency: "Weekly on Monday"
+  retention_period: "2 years"
+  
+  # Partitioning & Clustering
+  partitioning:
+    enabled: true
+    column: "extract_date"
+    type: "DAILY"
+    retention_days: 730
+    
+  clustering:
+    enabled: true
+    columns: ["customer_segment", "country", "converted"]
+    
+  # Table Statistics
+  statistics:
+    total_size_gb: null
+    average_row_size_bytes: 512
+    compression_ratio: 3.5
+    
+  # Description
+  description: |
+    PRODUCTION Customer-level incrementality analysis dataset for measuring 
+    the causal impact of email marketing campaigns on vehicle purchase conversions.
+    
+    This table combines:
+    - Customer demographic and profile data (CDB)
+    - Purchase history (Salesforce)
+    - Email engagement metrics (Marketing Cloud)
+    - Derived features for statistical analysis
+    
+    Analysis Method: Propensity Score Matching / Difference-in-Differences
+    Observation Window: 90 days before conversion or analysis cutoff date
+    
+    WARNING: This table contains business-critical data used for strategic
+    marketing decisions. Any modifications must be approved by Data Governance.
+    
+  business_context: |
+    This dataset enables marketing teams to answer:
+    - Does sending emails causally increase conversions? (Primary Question)
+    - What is the incremental lift from email marketing?
+    - Which customer segments benefit most from email outreach?
+    - Are we over/under-emailing certain cohorts?
+    - What is the ROI of email marketing campaigns?
+    - How should we optimize email frequency and targeting?
+    
+    Business Impact:
+    - Informs $50M+ annual email marketing budget allocation
+    - Drives customer segmentation and targeting strategy
+    - Supports quarterly board presentations on marketing effectiveness
+    
+  technical_notes: |
+    - Data refreshed via Airflow DAG: incrementality_etl_pipeline
+    - Dependencies: CDB, Salesforce, Marketing Cloud
+    - Downstream consumers: Tableau dashboards, Python ML models, Looker reports
+    - SLA: Available by 09:00 UTC every Monday
+    
+  data_lineage:
+    - source: "PLAYGROUND_LM.TRF.TRF_CDB_PREFILTERED"
+      description: "Customer master data and consent flags"
+      update_frequency: "Daily"
+      contact: "crm-team@company.com"
+      
+    - source: "PLAYGROUND_LM.SALESFORCE.SF_ORDER_HISTORY"
+      description: "Vehicle purchase orders from Salesforce"
+      update_frequency: "Hourly"
+      contact: "salesforce-admin@company.com"
+      
+    - source: "PLAYGROUND_LM.MARKETING_CLOUD.SFMC_SENT"
+      description: "Email send events from Marketing Cloud"
+      update_frequency: "Hourly"
+      contact: "martech-team@company.com"
+      
+    - source: "PLAYGROUND_LM.MARKETING_CLOUD.SFMC_OPENS"
+      description: "Email open events"
+      update_frequency: "Hourly"
+      contact: "martech-team@company.com"
+      
+    - source: "PLAYGROUND_LM.MARKETING_CLOUD.SFMC_CLICKS"
+      description: "Email click events"
+      update_frequency: "Hourly"
+      contact: "martech-team@company.com"
+
+# ============================================================================
+# PRIMARY KEYS & INDEXES
+# ============================================================================
+keys:
+  primary_key:
+    columns: ["cdb_cust_id", "extract_date"]
+    description: "Composite key: customer + analysis period"
+    uniqueness_constraint: true
+    
+  natural_key:
+    columns: ["cdb_cust_id"]
+    description: "Business natural key - customer identifier"
+    
+  foreign_keys: []  # Denormalized analytical table
+  
+  indexes:
+    - name: "idx_treatment_outcome"
+      columns: ["received_email", "converted"]
+      purpose: "Fast filtering for treatment/control and outcome groups"
+      estimated_selectivity: 0.15
+      
+    - name: "idx_customer_segment"
+      columns: ["customer_segment", "age_group"]
+      purpose: "Cohort analysis and segmentation queries"
+      estimated_selectivity: 0.05
+      
+    - name: "idx_temporal"
+      columns: ["extract_date", "reference_date"]
+      purpose: "Time-based queries and trend analysis"
+      estimated_selectivity: 0.01
+
+# ============================================================================
+# COLUMN DEFINITIONS - ENHANCED WITH PRODUCTION METADATA
+# ============================================================================
+columns:
+  # --------------------------------------------------------------------------
+  # PRIMARY KEY
+  # --------------------------------------------------------------------------
+  cdb_cust_id:
+    # Basic Properties
+    type: "INTEGER"
+    nullable: false
+    description: "Unique customer identifier (anonymized)"
+    business_name: "Customer ID"
+    business_meaning: "Unique identifier for each customer in CDB system"
+    
+    # Data Quality
+    data_quality:
+      uniqueness: "100% - Primary key component"
+      completeness: "100% - Required field"
+      validity_rule: "Positive integer, typically 7 digits"
+      valid_range: [1000000, 9999999]
+      
+    # Security & Privacy
+    pii: false
+    phi: false
+    encryption_required: false
+    masking_required: false
+    
+    # Technical Details
+    source_system: "CDB"
+    source_column: "CUST_ID"
+    transformation: "CAST(CUST_ID AS INTEGER)"
+    
+    # Monitoring
+    alert_on_null: true
+    alert_on_duplicate: true
+    
+    # Usage
+    examples: [1000001, 1000002, 1000003]
+    used_in_analysis: "Grouping, joining, customer-level aggregations"
+    used_in_reports: ["Customer Detail Report", "Segment Analysis Dashboard"]
+    
+  # --------------------------------------------------------------------------
+  # OUTCOME VARIABLE (DEPENDENT VARIABLE)
+  # --------------------------------------------------------------------------
+  converted:
+    # Basic Properties
+    type: "INTEGER"
+    nullable: false
+    description: "Binary outcome: 1 if customer purchased a vehicle, 0 otherwise"
+    business_name: "Conversion Flag"
+    business_meaning: |
+      Indicates whether the customer completed a vehicle purchase during the 
+      observation period. A purchase is defined as a car order with a VIN 
+      registered in Salesforce with status = 'Completed' or 'Delivered'.
+    
+    # Statistical Role
+    statistical_role: "Outcome variable (dependent variable) in causal analysis"
+    variable_type: "Binary"
+    distribution: "Bernoulli"
+    
+    # Values & Distribution
+    values: [0, 1]
+    value_labels:
+      0: "Did not purchase"
+      1: "Purchased vehicle"
+    
+    expected_distribution:
+      value_0_pct: 85
+      value_1_pct: 15
+      baseline_conversion_rate: 0.12
+      
+    # Data Quality
+    data_quality:
+      completeness: "100% - Required field"
+      validity_rule: "Must be 0 or 1"
+      valid_values: [0, 1]
+      null_rate_threshold: 0.0
+      anomaly_threshold: "Conversion rate outside [8%, 20%]"
+      
+    # Business Rules
+    business_rules:
+      - "Only counts purchases with valid VIN"
+      - "Must occur within observation window (reference_date ± 180 days)"
+      - "One conversion per customer per period"
+      - "Excludes cancelled, voided, or refunded orders"
+      - "Excludes employee purchases"
+      
+    # Technical Details
+    calculation: |
+      CASE 
+        WHEN sfc_vin IS NOT NULL 
+         AND sfc_status IN ('Completed', 'Delivered')
+         AND sfc_order_date BETWEEN (reference_date - 180) AND reference_date
+        THEN 1 
+        ELSE 0 
+      END
+      
+    source_system: "Salesforce"
+    source_table: "SF_ORDER_HISTORY"
+    source_column: "VIN__C"
+    
+    # Interpretation
+    interpretation_notes: |
+      This is the PRIMARY OUTCOME we're trying to move with email marketing.
+      
+      Historical Performance:
+      - Baseline conversion rate (no email): 10-12%
+      - Treatment conversion rate (with email): 15-18%
+      - Target conversion rate: 15%+
+      
+      Statistical Considerations:
+      - Binary outcome → Use logistic regression or matching methods
+      - Rare event (15%) → May need larger sample sizes for power
+      - Time-varying → Account for seasonality and trends
+      
+    # Monitoring & Alerts
+    monitoring:
+      alert_on_null: true
+      alert_on_invalid_values: true
+      alert_on_distribution_shift: true
+      expected_daily_conversions: [150, 300]
+      sla_response_time: "4 hours"
+      
+    # Usage & Impact
+    used_in_metrics: 
+      - "conversion_rate"
+      - "incremental_conversions"
+      - "treatment_effect"
+      - "marketing_roi"
+    used_in_analysis: "Primary outcome for all incrementality models"
+    business_impact: "HIGH - Drives $50M+ marketing budget decisions"
+    
+  # --------------------------------------------------------------------------
+  # TREATMENT VARIABLE (INDEPENDENT VARIABLE)
+  # --------------------------------------------------------------------------
+  received_email:
+    # Basic Properties
+    type: "INTEGER"
+    nullable: false
+    description: "Binary treatment: 1 if customer received email, 0 if control"
+    business_name: "Email Treatment Flag"
+    business_meaning: |
+      Indicates whether the customer was in the treatment group (received at 
+      least one marketing email) or control group (received no marketing email) 
+      during the campaign period.
+      
+      Treatment Assignment:
+      - Random assignment for A/B tests
+      - Rule-based assignment for targeted campaigns
+      - Exclusions: opt-outs, invalid emails, employees
+      
+    # Statistical Role
+    statistical_role: "Treatment variable (independent variable) in causal analysis"
+    variable_type: "Binary"
+    distribution: "Bernoulli"
+    
+    # Values & Distribution
+    values: [0, 1]
+    value_labels:
+      0: "Control group - No email received"
+      1: "Treatment group - Received marketing email"
+      
+    expected_distribution:
+      value_0_pct: 30
+      value_1_pct: 70
+      treatment_probability: 0.70
+      
+    # Data Quality
+    data_quality:
+      completeness: "100% - Required field"
+      validity_rule: "Must be 0 or 1"
+      valid_values: [0, 1]
+      balance_check: "Treatment/control ratio should be 70/30 ± 5%"
+      
+    # Business Rules
+    business_rules:
+      - "Control group: Customers eligible but not sent email"
+      - "Treatment group: Customers who received at least 1 email"
+      - "Treatment assignment must occur BEFORE outcome measurement"
+      - "Cannot change treatment status within analysis period"
+      - "Excludes hard bounces and opt-outs"
+      
+    # Technical Details
+    calculation: |
+      CASE 
+        WHEN sfmc_sendid IS NOT NULL 
+         AND sfmc_event_date <= reference_date
+         AND bounce_type NOT IN ('hard', 'block')
+        THEN 1 
+        ELSE 0 
+      END
+      
+    source_system: "Marketing Cloud"
+    source_table: "SFMC_SENT"
+    source_column: "SENDID"
+    
+    # Causal Inference Framework
+    causal_interpretation: |
+      This is the TREATMENT we're evaluating for causal impact.
+      
+      Causal Question: Does received_email = 1 CAUSE converted = 1?
+      
+      Identification Strategy:
+      - We CANNOT simply compare conversion rates between groups
+      - Treatment assignment may be correlated with confounders
+      - Example: Engaged customers more likely to receive AND convert
+      - Solution: Propensity Score Matching or regression adjustment
+      
+      Key Assumptions (for valid causal inference):
+      1. Conditional Independence: Treatment random conditional on X
+      2. Common Support: Overlap in propensity scores
+      3. SUTVA: No spillover effects between customers
+      4. Positivity: P(treatment=1|X) ∈ (0,1) for all X
+      
+    confounders: 
+      - "customer_segment"
+      - "age_group"
+      - "total_purchases"
+      - "recency_bin"
+      - "email_opens_last_90_days"
+      - "email_clicks_last_90_days"
+      
+    # Monitoring & Alerts
+    monitoring:
+      alert_on_null: true
+      alert_on_invalid_values: true
+      alert_on_imbalance: true
+      treatment_ratio_bounds: [0.65, 0.75]
+      
+    # Usage & Impact
+    used_in_metrics:
+      - "treatment_effect"
+      - "incremental_lift"
+      - "email_roi"
+      - "cost_per_incremental_conversion"
+    business_impact: "HIGH - Core treatment variable for all analyses"
+    
+  # --------------------------------------------------------------------------
+  # CORE IDENTIFIERS
+  # --------------------------------------------------------------------------
+  country:
+    type: "VARCHAR(2)"
+    nullable: false
+    description: "ISO 3166-1 alpha-2 country code"
+    business_name: "Market Code"
+    business_meaning: "Geographic market for the customer"
+    
+    values: ["GB", "DE", "FR", "IT", "ES", "SE", "NL", "BE", "AT", "CH"]
+    expected_distribution:
+      GB: 40
+      DE: 25
+      FR: 15
+      IT: 10
+      ES: 5
+      other: 5
+      
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Must be valid ISO country code"
+      valid_values: ["GB", "DE", "FR", "IT", "ES", "SE", "NL", "BE", "AT", "CH"]
+      
+    source_system: "CDB"
+    used_in_analysis: "Market segmentation, country-level analysis, regional comparisons"
+    used_in_reports: ["Country Performance Dashboard", "Regional Analysis"]
+    
+  # --------------------------------------------------------------------------
+  # TEMPORAL VARIABLES (CRITICAL FOR CAUSAL INFERENCE)
+  # --------------------------------------------------------------------------
+  purchase_date:
+    type: "DATE"
+    nullable: true
+    description: "Date of vehicle purchase (NULL if not converted)"
+    business_name: "Purchase Date"
+    business_meaning: "Date when customer completed vehicle purchase order in Salesforce"
+    
+    data_quality:
+      completeness: "~15% (only for converters)"
+      validity_rule: "Must be within valid date range"
+      valid_range: ["2024-01-01", "2025-12-31"]
+      temporal_validity: "Must be >= email_send_date (if email received)"
+      
+    business_rules:
+      - "Only populated if converted = 1"
+      - "Should be >= email_send_date (if email received)"
+      - "Used to calculate days from email to purchase"
+      - "Cannot be in the future"
+      
+    source_system: "Salesforce"
+    source_column: "ORDER_DATE__C"
+    
+    used_in_analysis: |
+      - Reference date for converters
+      - Time-to-conversion analysis
+      - Seasonal pattern identification
+      - Campaign timing optimization
+      
+    causal_timing_note: |
+      CRITICAL FOR CAUSAL INFERENCE:
+      For valid causal inference, purchase_date must occur AFTER email_send_date.
+      If purchase occurred before email, exclude from analysis (no causal path).
+      
+      Temporal Ordering: email_send_date → ... → purchase_date
+      
+    monitoring:
+      alert_on_invalid_sequence: true
+      expected_time_to_purchase: [7, 90]  # days
+      
+  email_send_date:
+    type: "DATE"
+    nullable: true
+    description: "Date of most recent email sent (NULL if no email received)"
+    business_name: "Email Send Date"
+    business_meaning: "Last date when marketing email was sent to customer"
+    
+    data_quality:
+      completeness: "~70% (only for treatment group)"
+      validity_rule: "Must be within campaign period"
+      valid_range: ["2024-01-01", "2024-12-31"]
+      temporal_validity: "Must be <= purchase_date (if converted)"
+      
+    business_rules:
+      - "Only populated if received_email = 1"
+      - "If multiple emails, use most recent send date"
+      - "Should be <= purchase_date (if converted)"
+      - "Cannot be in the future"
+      
+    source_system: "Marketing Cloud"
+    source_column: "EVENTDATETIME"
+    
+    used_in_analysis: |
+      - Reference date for non-converters
+      - Calculate time from email to conversion
+      - Weekend/holiday flag derivation
+      - Email frequency optimization
+      
+    monitoring:
+      alert_on_future_date: true
+      alert_on_invalid_sequence: true
+      
+  reference_date:
+    type: "DATE"
+    nullable: false
+    description: "Analysis anchor date: purchase date for converters, email send date for non-converters, or dataset cutoff"
+    business_name: "Reference Date"
+    business_meaning: |
+      The key temporal reference point for each customer's observation window.
+      Defines the "cutoff" for measuring pre-treatment covariates and outcomes.
+      
+      Logic:
+      - If converted = 1: reference_date = purchase_date
+      - Else if received_email = 1: reference_date = email_send_date
+      - Else: reference_date = dataset_cutoff_date
+      
+    calculation: |
+      CASE 
+        WHEN converted = 1 THEN purchase_date
+        WHEN received_email = 1 THEN email_send_date
+        ELSE CURRENT_DATE()
+      END
+      
+    data_quality:
+      completeness: "100% - Required field"
+      validity_rule: "Cannot be NULL or future date"
+      
+    statistical_importance: |
+      ⚠️ CRITICAL FOR CAUSAL INFERENCE ⚠️
+      
+      All pre-treatment covariates (like email_opens_last_90_days) are measured 
+      BEFORE reference_date to avoid post-treatment bias.
+      
+      Post-treatment bias occurs when:
+      - We measure covariates AFTER treatment
+      - Treatment affects covariate values
+      - Creates spurious correlations
+      
+      Example:
+      ❌ BAD: Measure opens after purchase
+      ✅ GOOD: Measure opens before reference_date
+      
+    used_in_analysis: |
+      - Define observation window boundaries
+      - Ensure temporal ordering of treatment → outcome
+      - Calculate time-based features
+      - Avoid post-treatment bias
+      
+    monitoring:
+      alert_on_null: true
+      alert_on_invalid_logic: true
+      
+  extract_date:
+    type: "DATE"
+    nullable: false
+    description: "Date when data was extracted from source systems"
+    business_name: "Data Extract Date"
+    business_meaning: "ETL batch date - when this snapshot was created"
+    
+    default: "CURRENT_DATE()"
+    
+    data_quality:
+      completeness: "100% - Auto-populated"
+      
+    technical_details:
+      auto_generated: true
+      etl_process: "incrementality_etl_pipeline"
+      
+    used_in_analysis: "Data versioning, tracking historical runs, time travel queries"
+    
+    monitoring:
+      alert_on_stale_data: true
+      max_staleness_hours: 48
+
+  # --------------------------------------------------------------------------
+  # EMAIL ENGAGEMENT METRICS (KEY COVARIATES)
+  # --------------------------------------------------------------------------
+  email_opens_last_90_days:
+    type: "INTEGER"
+    nullable: false
+    description: "Number of emails opened in 90 days before reference_date"
+    business_name: "Email Opens (90d)"
+    business_meaning: |
+      Count of unique email open events by this customer in the 90-day window 
+      before the reference date. Multiple opens of same email count as one.
+      
+      This is a PRE-TREATMENT covariate used to control for email engagement propensity.
+      
+    # Statistical Role
+    statistical_role: "Covariate - controls for email engagement propensity"
+    variable_type: "Count"
+    distribution: "Poisson/Negative Binomial"
+    
+    # Expected Distribution
+    expected_distribution:
+      min: 0
+      max: 8
+      mean: 2.5
+      median: 2
+      std_dev: 1.8
+      p25: 1
+      p75: 4
+      p95: 6
+      
+    # Data Quality
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Non-negative integer"
+      valid_range: [0, 50]
+      default_for_no_email: 0
+      outlier_threshold: 20
+      
+    # Calculation
+    calculation: |
+      COUNT(DISTINCT CASE 
+        WHEN sfmc_open_eventdate BETWEEN (reference_date - 90) AND reference_date 
+        THEN sfmc_sendid 
+      END)
+      
+    # Business Rules
+    business_rules:
+      - "0 for customers who received no email"
+      - "Only counts opens within 90-day lookback window"
+      - "De-duplicated by sendid (one open per email)"
+      - "Measured BEFORE reference_date (pre-treatment)"
+      
+    # Source
+    source_system: "Marketing Cloud"
+    source_table: "SFMC_OPENS"
+    source_column: "EVENTDATE"
+    
+    # Interpretation
+    interpretation: |
+      Higher values indicate more engaged customers. These customers may be:
+      - More likely to receive emails (selection bias)
+      - More likely to convert even without email (confounding)
+      
+      Therefore, we MUST control for this in our matching/regression model.
+      
+      Engagement Tiers:
+      - 0 opens: Disengaged (~60% of recipients)
+      - 1-2 opens: Low engagement (~25%)
+      - 3-5 opens: Medium engagement (~12%)
+      - 6+ opens: High engagement (~3%)
+      
+    # Usage
+    used_in_analysis: |
+      - Propensity score calculation
+      - Covariate balancing in matching
+      - Engagement segmentation
+      - Email frequency optimization
+      
+    related_metrics: ["email_clicks_last_90_days", "email_engagement_rate"]
+    
+    # Monitoring
+    monitoring:
+      alert_on_invalid_range: true
+      alert_on_distribution_shift: true
+      expected_mean_range: [2.0, 3.0]
+      
+  email_clicks_last_90_days:
+    type: "INTEGER"
+    nullable: false
+    description: "Number of email link clicks in 90 days before reference_date"
+    business_name: "Email Clicks (90d)"
+    business_meaning: |
+      Count of unique email click events in the 90-day window. Clicks indicate 
+      high interest and intent - stronger signal than opens.
+      
+    statistical_role: "Covariate - controls for high-intent engagement"
+    variable_type: "Count"
+    distribution: "Poisson"
+    
+    expected_distribution:
+      min: 0
+      max: 5
+      mean: 1.2
+      median: 1
+      std_dev: 1.1
+      p95: 4
+      
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Non-negative integer, clicks <= opens"
+      valid_range: [0, 20]
+      default_for_no_email: 0
+      consistency_check: "email_clicks_last_90_days <= email_opens_last_90_days"
+      
+    calculation: |
+      COUNT(DISTINCT CASE 
+        WHEN sfmc_click_eventdate BETWEEN (reference_date - 90) AND reference_date 
+        THEN sfmc_sendid 
+      END)
+      
+    business_rules:
+      - "0 for customers who received no email"
+      - "Clicks ≤ Opens (logical constraint)"
+      - "Only counts clicks within 90-day lookback"
+      - "Measured BEFORE reference_date"
+      
+    source_system: "Marketing Cloud"
+    source_table: "SFMC_CLICKS"
+    
+    interpretation: |
+      High clickers are highly engaged and more likely to convert. Must control 
+      for this to isolate the causal email effect.
+      
+      Click-to-Open Rate = Clicks / Opens
+      - <10%: Low engagement
+      - 10-20%: Average engagement
+      - >20%: High engagement
+      
+    used_in_analysis: |
+      - Propensity score calculation
+      - High-intent segment identification
+      - Email effectiveness metrics
+      - Content optimization
+      
+    monitoring:
+      alert_on_invalid_range: true
+      alert_on_consistency_violation: true
+      
+  email_subject_type:
+    type: "VARCHAR(50)"
+    nullable: true
+    description: "Type of email campaign sent"
+    business_name: "Email Campaign Type"
+    business_meaning: "Classification of email content/purpose"
+    
+    values: ["Program", "Newsletter", "Campaign", "Promotional", "Transactional", "Other"]
+    expected_distribution:
+      Program: 40
+      Newsletter: 25
+      Campaign: 20
+      Promotional: 10
+      Other: 5
+      
+    data_quality:
+      completeness: "~70% (only for treatment group)"
+      default_value: "NULL for control group"
+      valid_values: ["Program", "Newsletter", "Campaign", "Promotional", "Transactional", "Other"]
+      
+    source_system: "Marketing Cloud"
+    
+    used_in_analysis: |
+      - Heterogeneous treatment effects by email type
+      - A/B testing across campaign types
+      - Content optimization insights
+      - Campaign performance benchmarking
+
+  # --------------------------------------------------------------------------
+  # CUSTOMER PROFILE (COVARIATES)
+  # --------------------------------------------------------------------------
+  customer_segment:
+    type: "VARCHAR(50)"
+    nullable: false
+    description: "CRM-defined customer lifecycle status"
+    business_name: "Customer Segment"
+    business_meaning: |
+      Strategic segmentation based on purchase history and engagement:
+      - Customer: Has purchased before, active relationship
+      - Lapsed: Previous customer, no recent purchases (>2 years)
+      - Non-Customer: In database but never purchased
+      - Prospect: New lead, never purchased, recent inquiry
+      
+    statistical_role: "Key covariate - controls for baseline conversion propensity"
+    variable_type: "Categorical"
+    
+    values: ["Customer", "Lapsed", "Non-Customer", "Prospect"]
+    value_labels:
+      Customer: "Active customer with recent purchase"
+      Lapsed: "Past customer, inactive >2 years"
+      Non-Customer: "Known contact, never purchased"
+      Prospect: "Recent lead/inquiry, never purchased"
+      
+    expected_distribution:
+      Customer: 30
+      Lapsed: 25
+      Non-Customer: 25
+      Prospect: 20
+      
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Must be one of the four segments"
+      valid_values: ["Customer", "Lapsed", "Non-Customer", "Prospect"]
+      
+    business_rules:
+      - "Customer: total_purchases >= 1 AND last_purchase <= 730 days ago"
+      - "Lapsed: total_purchases >= 1 AND last_purchase > 730 days ago"
+      - "Non-Customer: total_purchases = 0, known to CRM >6 months"
+      - "Prospect: total_purchases = 0, known to CRM <6 months OR recent inquiry"
+      
+    source_system: "CDB"
+    source_column: "CUST_STS"
+    
+    statistical_importance: |
+      ⚠️ CRITICAL CONFOUNDER ⚠️
+      
+      Customers have higher baseline conversion rates AND are more likely to 
+      receive emails. This creates selection bias.
+      
+      Baseline Conversion Rates (historical):
+      - Customer: 18%
+      - Lapsed: 8%
+      - Non-Customer: 5%
+      - Prospect: 12%
+      
+      Must balance this in matching/regression to avoid bias.
+      
+    used_in_analysis: |
+      - Stratified analysis by segment
+      - Propensity score model feature (HIGH importance)
+      - Heterogeneous treatment effects
+      - Segment-specific targeting recommendations
+      
+    expected_treatment_effects:
+      Customer: "Low incremental lift (already engaged, ceiling effect)"
+      Lapsed: "High incremental lift (reactivation opportunity, WIN-BACK)"
+      Non-Customer: "Medium lift (building awareness)"
+      Prospect: "High lift (first touchpoint critical, NURTURE)"
+      
+    monitoring:
+      alert_on_distribution_shift: true
+      expected_customer_pct: [25, 35]
+      
+    used_in_reports:
+      - "Segment Performance Dashboard"
+      - "Customer Lifecycle Analysis"
+      - "Marketing ROI by Segment"
+
+  total_purchases:
+    type: "INTEGER"
+    nullable: false
+    description: "Lifetime count of vehicle purchases"
+    business_name: "Total Purchases"
+    business_meaning: "Total number of cars purchased by this customer historically"
+    
+    statistical_role: "Covariate - controls for purchase propensity and loyalty"
+    variable_type: "Count"
+    distribution: "Zero-inflated Poisson"
+    
+    expected_distribution:
+      min: 0
+      max: 5
+      mean: 0.8
+      median: 0
+      mode: 0
+      p75: 1
+      p95: 3
+      p99: 5
+      
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Non-negative integer, typically 0-5"
+      valid_range: [0, 20]
+      
+    calculation: |
+      COUNT(DISTINCT sfc_vin) 
+      WHERE MD_IS_CURRENT = TRUE
+        AND sfc_status NOT IN ('Cancelled', 'Voided')
+        AND sfc_order_date < reference_date
+      
+    business_rules:
+      - "0 for prospects and non-customers"
+      - "≥1 for customers and lapsed customers"
+      - "Excludes cancelled/voided orders"
+      - "Measured at reference_date (historical only)"
+      
+    source_system: "Salesforce"
+    source_table: "SF_ORDER_HISTORY"
+    source_column: "VIN__C"
+    
+    interpretation: |
+      Higher purchase count indicates:
+      - Higher loyalty and satisfaction
+      - Higher baseline conversion rate for next purchase
+      - Different responsiveness to marketing
+      
+      Purchase Tiers:
+      - 0 purchases: Non-customer/Prospect (70%)
+      - 1 purchase: One-time buyer (20%)
+      - 2 purchases: Repeat customer (7%)
+      - 3+ purchases: Loyal customer (3%)
+      
+      Must control to avoid overestimating email impact.
+      
+    used_in_analysis: |
+      - Propensity score matching (HIGH importance)
+      - Loyalty analysis
+      - Customer lifetime value proxy
+      - Churn prediction
+      
+    monitoring:
+      alert_on_invalid_range: true
+      alert_on_negative_values: true
+      expected_mean_range: [0.7, 0.9]
+
+  recency_bin:
+    type: "VARCHAR(10)"
+    nullable: false
+    description: "Time since last purchase, bucketed"
+    business_name: "Purchase Recency"
+    business_meaning: "How recently did the customer last purchase?"
+    
+    statistical_role: "Covariate - controls for recency effects (RFM analysis)"
+    variable_type: "Ordinal categorical"
+    
+    values: ["≤1y", "1-2y", ">2y", "Never"]
+    value_labels:
+      "≤1y": "Purchased within last year (active)"
+      "1-2y": "Purchased 1-2 years ago (at-risk)"
+      ">2y": "Purchased over 2 years ago (lapsed)"
+      "Never": "Never purchased"
+      
+    expected_distribution:
+      Never: 45
+      "≤1y": 20
+      "1-2y": 20
+      ">2y": 15
+      
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Must be one of four categories"
+      valid_values: ["≤1y", "1-2y", ">2y", "Never"]
+      
+    calculation: |
+      CASE 
+        WHEN total_purchases = 0 THEN 'Never'
+        WHEN days_since_last_purchase <= 365 THEN '≤1y'
+        WHEN days_since_last_purchase <= 730 THEN '1-2y'
+        ELSE '>2y'
+      END
+      
+    source_calculation: "Derived from SF_ORDER_HISTORY"
+    
+    statistical_importance: |
+      RFM (Recency, Frequency, Monetary) analysis shows recency strongly 
+      predicts conversion.
+      
+      Baseline Conversion Rates:
+      - ≤1y: 5% (just bought, unlikely to buy again soon)
+      - 1-2y: 12% (ready for next purchase)
+      - >2y: 8% (lapsed, reactivation possible)
+      - Never: 10% (acquisition opportunity)
+      
+      This is a KEY control variable to avoid bias.
+      
+    used_in_analysis: |
+      - Propensity score matching (MEDIUM-HIGH importance)
+      - Lifecycle stage analysis
+      - Optimal timing for outreach
+      - Win-back campaign targeting
+      
+    monitoring:
+      alert_on_distribution_shift: true
+
+  age_group:
+    type: "VARCHAR(50)"
+    nullable: false
+    description: "Age bracket derived from date of birth"
+    business_name: "Age Group"
+    business_meaning: "Customer age category for demographic analysis"
+    
+    statistical_role: "Covariate - controls for demographic effects"
+    variable_type: "Ordinal categorical"
+    
+    values: ["Young Adult (18-24)", "Middle Adult (25-35)", "Adult (36-60)", "Senior (60+)", "No age data"]
+    expected_distribution:
+      "Young Adult (18-24)": 15
+      "Middle Adult (25-35)": 30
+      "Adult (36-60)": 35
+      "Senior (60+)": 15
+      "No age data": 5
+      
+    data_quality:
+      completeness: "95%"
+      validity_rule: "Age between 18 and 100"
+      valid_values: ["Young Adult (18-24)", "Middle Adult (25-35)", "Adult (36-60)", "Senior (60+)", "No age data"]
+      
+    calculation: |
+      CASE
+        WHEN dob IS NULL THEN 'No age data'
+        WHEN TIMESTAMPDIFF(YEAR, dob, reference_date) BETWEEN 18 AND 24 THEN 'Young Adult (18-24)'
+        WHEN TIMESTAMPDIFF(YEAR, dob, reference_date) BETWEEN 25 AND 35 THEN 'Middle Adult (25-35)'
+        WHEN TIMESTAMPDIFF(YEAR, dob, reference_date) BETWEEN 36 AND 60 THEN 'Adult (36-60)'
+        WHEN TIMESTAMPDIFF(YEAR, dob, reference_date) > 60 THEN 'Senior (60+)'
+        ELSE 'No age data'
+      END
+      
+    source_system: "CDB"
+    source_column: "DOB"
+    
+    business_rules:
+      - "Minimum age: 18 (legal driving age)"
+      - "Missing DOB coded as 'No age data'"
+      - "Age calculated at reference_date"
+      
+    interpretation: |
+      Age affects both email preferences AND purchase propensity.
+      
+      Conversion Rates by Age:
+      - 18-24: 8% (budget constraints, first car)
+      - 25-35: 15% (peak buying age, family formation)
+      - 36-60: 14% (replacement purchases, upgrades)
+      - 60+: 9% (lower purchase frequency)
+      
+    used_in_analysis: |
+      - Demographic targeting optimization
+      - Propensity score feature (MEDIUM importance)
+      - Persona-based reporting
+      - Age-specific treatment effects
+      
+    pii: false  # Binned age is not PII
+    masking_required: false
+    
+    monitoring:
+      alert_on_high_missing_rate: true
+      expected_no_age_data_pct: [0, 10]
+
+  gender:
+    type: "VARCHAR(1)"
+    nullable: false
+    description: "Customer gender"
+    business_name: "Gender"
+    business_meaning: "Customer gender for demographic analysis"
+    
+    statistical_role: "Covariate - minor demographic control"
+    variable_type: "Categorical"
+    
+    values: ["M", "F", "U", "O"]
+    value_labels:
+      M: "Male"
+      F: "Female"
+      U: "Unknown/Prefer not to say"
+      O: "Other/Non-binary"
+      
+    expected_distribution:
+      M: 45
+      F: 45
+      U: 8
+      O: 2
+      
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Must be M, F, U, or O"
+      valid_values: ["M", "F", "U", "O"]
+      default_value: "U for unknown"
+      
+    source_system: "CDB"
+    source_column: "SEX"
+    
+    used_in_analysis: |
+      - Demographic analysis
+      - Propensity score (LOW importance)
+      - Gender-specific marketing insights
+      
+    pii: false  # Gender alone is not PII
+    sensitivity: "LOW"
+    
+  region:
+    type: "VARCHAR(10)"
+    nullable: false
+    description: "Postal code prefix - geographic region"
+    business_name: "Region"
+    business_meaning: "Customer's geographic location (postal area)"
+    
+    statistical_role: "Covariate - controls for geographic effects"
+    variable_type: "Categorical"
+    
+    examples: ["SW1", "E1", "N1", "W1", "SE1", "NW1", "EC1", "WC1", "M1", "B1"]
+    cardinality: ~100  # Approximate number of unique regions
+    
+    expected_distribution:
+      SW1: 10
+      E1: 10
+      N1: 10
+      # ... varies by country
+      
+    data_quality:
+      completeness: "95%"
+      validity_rule: "Valid postal code prefix"
+      
+    source_system: "CDB"
+    source_column: "HOME_POSTAL_CODE"
+    
+    transformation: "LEFT(HOME_POSTAL_CODE, 3)"
+    
+    used_in_analysis: |
+      - Geographic segmentation
+      - Regional marketing performance
+      - Urban/rural proxy
+      - Regional treatment effects
+      
+    pii: false  # Postal prefix alone is not PII
+    
+  urban_rural:
+    type: "INTEGER"
+    nullable: true
+    description: "Urban/rural classification: 1 = Urban, 0 = Rural"
+    business_name: "Urban Flag"
+    business_meaning: "Whether customer is in urban or rural area"
+    
+    statistical_role: "Optional covariate"
+    variable_type: "Binary"
+    
+    values: [0, 1, null]
+    value_labels:
+      0: "Rural"
+      1: "Urban"
+      null: "Unknown"
+      
+    expected_distribution:
+      value_0_pct: 10
+      value_1_pct: 80
+      null_pct: 10
+      
+    data_quality:
+      completeness: "~90%"
+      derivation: "Lookup via postal code to ONS classification"
+      
+    source_system: "External - ONS Urban/Rural Classification"
+    
+    used_in_analysis: |
+      - Optional control variable
+      - Urban vs rural campaign effectiveness
+      - Infrastructure access analysis
+      
+  # --------------------------------------------------------------------------
+  # TEMPORAL CONTROL VARIABLES
+  # --------------------------------------------------------------------------
+  weekend_flag:
+    type: "INTEGER"
+    nullable: false
+    description: "1 if email sent on Saturday/Sunday, 0 otherwise"
+    business_name: "Weekend Send"
+    business_meaning: "Whether email was sent on a weekend"
+    
+    statistical_role: "Control variable - weekend effects on engagement"
+    variable_type: "Binary"
+    
+    values: [0, 1]
+    expected_distribution:
+      value_0_pct: 70
+      value_1_pct: 30
+      
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Must be 0 or 1"
+      default_value: 0
+      
+    calculation: |
+      CASE 
+        WHEN DAYNAME(email_send_date) IN ('Sat', 'Sun') THEN 1 
+        WHEN received_email = 0 THEN 0
+        ELSE 0 
+      END
+      
+    business_rules:
+      - "0 for control group (no email)"
+      - "Based on email_send_date, not purchase_date"
+      - "Saturday = weekend"
+      - "Sunday = weekend"
+      
+    interpretation: |
+      Weekend sends may have different open rates and conversion effects.
+      
+      Historical Performance:
+      - Weekday sends: 15.2% conversion rate
+      - Weekend sends: 14.8% conversion rate
+      - Difference not statistically significant
+      
+      Control for this to isolate the pure treatment effect.
+      
+    used_in_analysis: |
+      - Temporal pattern analysis
+      - Optimal send time identification
+      - Control variable in regression
+      - Day-of-week treatment effects
+      
+  holiday_season:
+    type: "INTEGER"
+    nullable: false
+    description: "1 if email sent during major holiday period, 0 otherwise"
+    business_name: "Holiday Send"
+    business_meaning: "Whether email was sent near a major holiday"
+    
+    statistical_role: "Control variable - holiday seasonality"
+    variable_type: "Binary"
+    
+    values: [0, 1]
+    expected_distribution:
+      value_0_pct: 80
+      value_1_pct: 20
+      
+    data_quality:
+      completeness: "100%"
+      validity_rule: "Must be 0 or 1"
+      default_value: 0
+      
+    calculation: |
+      CASE 
+        WHEN email_send_date BETWEEN (holiday_date - 3) AND (holiday_date + 3) 
+        THEN 1 
+        ELSE 0 
+      END
+      
+    business_rules:
+      - "±3 day window around major holidays"
+      - "0 for control group"
+      - "Based on country-specific holiday calendar"
+      
+    holidays_included:
+      GB: ["Christmas", "Easter", "Bank Holidays"]
+      DE: ["Christmas", "Easter", "German Unity Day"]
+      FR: ["Christmas", "Easter", "Bastille Day"]
+      
+    interpretation: |
+      Holiday periods have different consumer behavior patterns.
+      
+      Holiday Conversion Rates:
+      - Holiday period: 16.5%
+      - Non-holiday: 14.8%
+      - Lift: +11% (but selection bias present)
+      
+      Must control to avoid confounding seasonal effects with treatment effects.
+      
+    used_in_analysis: |
+      - Seasonality adjustment
+      - Holiday campaign performance
+      - Control variable in causal models
+      - Quarterly reporting adjustments
+      
+    source_reference: "Holiday calendar table: PLAYGROUND_LM.REF.MAJOR_HOLIDAYS"
+
+  # --------------------------------------------------------------------------
+  # OPTIONAL FIELDS (LIMITED DATA AVAILABILITY)
+  # --------------------------------------------------------------------------
+  days_since_last_service:
+    type: "INTEGER"
+    nullable: true
+    description: "Days since last aftersales service (NULL if no service history)"
+    business_name: "Service Recency"
+    business_meaning: "Days since customer's last service appointment"
+    
+    statistical_role: "Optional covariate - service engagement"
+    variable_type: "Count"
+    
+    expected_distribution:
+      min: 30
+      max: 730
+      mean: 365
+      median: 330
+      
+    data_quality:
+      completeness: "~60% (aftersales data limited)"
+      validity_rule: "Positive integer"
+      valid_range: [30, 3650]
+      
+    source_system: "Aftersales System"
+    availability: "Limited - not all customers have service history"
+    
+    used_in_analysis: |
+      - Optional covariate if data available
+      - Service engagement proxy
+      - Loyalty indicator
+      
+    future_enhancement: "Expand aftersales integration to increase coverage"
+    
+  website_visits_last_90_days:
+    type: "INTEGER"
+    nullable: true
+    description: "Number of website visits in 90 days (NULL if no tracking)"
+    business_name: "Website Visits"
+    business_meaning: "Web engagement level"
+    
+    statistical_role: "Optional covariate"
+    variable_type: "Count"
+    
+    data_quality:
+      completeness: "~40% (GA stitching limited)"
+      validity_rule: "Non-negative integer"
+      
+    source_system: "Google Analytics"
+    availability: "Limited - requires customer ID stitching"
+    
+    used_in_analysis: |
+      - Optional engagement metric
+      - Multi-channel attribution
+      - Digital engagement scoring
+      
+    future_enhancement: "Implement customer ID stitching to increase coverage"
+    
+  quote_requested:
+    type: "INTEGER"
+    nullable: true
+    description: "1 if customer requested a quote, 0 otherwise"
+    business_name: "Quote Request Flag"
+    
+    values: [0, 1, null]
+    data_quality:
+      completeness: "~20% (tracking limited)"
+      
+    source_system: "Lead Management System"
+    used_in_analysis: "Optional intent signal"
+    
+  test_drive_booked:
+    type: "INTEGER"
+    nullable: true
+    description: "1 if customer booked a test drive, 0 otherwise"
+    business_name: "Test Drive Flag"
+    
+    values: [0, 1, null]
+    data_quality:
+      completeness: "~20% (tracking limited)"
+      
+    source_system: "Lead Management System"
+    used_in_analysis: "Optional intent signal"
+    
+  loyalty_tier:
+    type: "VARCHAR(20)"
+    nullable: true
+    description: "Loyalty program tier (NULL if not enrolled)"
+    business_name: "Loyalty Tier"
+    
+    values: ["Bronze", "Silver", "Gold", "Platinum", null]
+    data_quality:
+      completeness: "~30% (program limited)"
+      
+    source_system: "Loyalty Program Database"
+    used_in_analysis: "Optional loyalty analysis"
+    
+  period_active_days:
+    type: "INTEGER"
+    nullable: true
+    description: "Number of days in observation window"
+    business_name: "Observation Period"
+    
+    default_value: 90
+    calculation: "DATEDIFF('day', reference_date - 90, reference_date)"
+    used_in_analysis: "Exposure time control"
+
+# ============================================================================
+# DERIVED METRICS & CALCULATED FIELDS
+# ============================================================================
+metrics:
+  # Basic Metrics
+  conversion_rate:
+    formula: "SUM(converted) / COUNT(*)"
+    description: "Percentage of customers who purchased"
+    format: "percentage"
+    expected_value: "12-15%"
+    business_interpretation: "Overall purchase rate in the cohort"
+    
+  treatment_conversion_rate:
+    formula: "SUM(CASE WHEN received_email = 1 THEN converted ELSE 0 END) / SUM(received_email)"
+    description: "Conversion rate for email recipients (treatment group)"
+    format: "percentage"
+    expected_value: "15-18%"
+    
+  control_conversion_rate:
+    formula: "SUM(CASE WHEN received_email = 0 THEN converted ELSE 0 END) / SUM(CASE WHEN received_email = 0 THEN 1 ELSE 0 END)"
+    description: "Conversion rate for non-recipients (control group)"
+    format: "percentage"
+    expected_value: "10-12%"
+    
+  # Causal Metrics
+  naive_lift:
+    formula: "(treatment_conversion_rate - control_conversion_rate) / control_conversion_rate"
+    description: "Naive lift calculation (does NOT account for selection bias)"
+    format: "percentage"
+    warning: "⚠️ This is NOT the true incremental lift - use causal inference methods"
+    expected_value: "20-50%"
+    bias: "Upward bias due to selection effects"
+    
+  incremental_lift:
+    formula: "(ATE from causal model) / control_conversion_rate"
+    description: "True incremental lift after controlling for confounders"
+    format: "percentage"
+    method: "Propensity Score Matching or DiD"
+    expected_value: "10-30%"
+    interpretation: |
+      The percentage increase in conversions causally attributable to email, 
+      after accounting for selection bias and confounding variables.
+      
+  average_treatment_effect:
+    formula: "E[Y(1) - Y(0)]"
+    description: "Average Treatment Effect - difference in outcomes under treatment vs control"
+    unit: "percentage points"
+    expected_value: "0.03 to 0.08"
+    interpretation: "3-8 percentage point increase in conversion rate due to email"
+    
+  # Engagement Metrics
+  email_engagement_rate:
+    formula: "SUM(CASE WHEN email_opens_last_90_days > 0 THEN 1 ELSE 0 END) / SUM(received_email)"
+    description: "Percentage of email recipients who opened at least once"
+    format: "percentage"
+    expected_value: "30-40%"
+    
+  email_ctr:
+    formula: "SUM(CASE WHEN email_clicks_last_90_days > 0 THEN 1 ELSE 0 END) / SUM(CASE WHEN email_opens_last_90_days > 0 THEN 1 ELSE 0 END)"
+    description: "Click-through rate (clicks / opens)"
+    format: "percentage"
+    expected_value: "15-25%"
+    
+  # Business Metrics
+  incremental_conversions:
+    formula: "COUNT(*) * treatment_proportion * incremental_lift * control_conversion_rate"
+    description: "Estimated number of conversions caused by email"
+    unit: "count"
+    used_for: "Budget justification, ROI calculation"
+    
+  cost_per_incremental_conversion:
+    formula: "total_email_cost / incremental_conversions"
+    description: "Cost to generate one incremental conversion"
+    unit: "currency"
+    benchmark: "< $500 per incremental sale"
+    
+  email_roi:
+    formula: "(incremental_conversions * avg_order_value - total_email_cost) / total_email_cost"
+    description: "Return on investment for email marketing"
+    format: "percentage"
+    target: "> 200%"
+
+# ============================================================================
+# STATISTICAL ANALYSIS SPECIFICATIONS
+# ============================================================================
+statistical_analysis:
+  research_question: "Does sending marketing emails causally increase vehicle purchase conversions?"
+  
+  # Causal Framework
+  causal_framework:
+    primary_method: "Propensity Score Matching"
+    alternative_methods: 
+      - "Difference-in-Differences"
+      - "Regression Discontinuity Design (if applicable)"
+      - "Instrumental Variables (if instrument available)"
+    
+    # Key Assumptions
+    assumptions:
+      conditional_independence:
+        description: "Treatment assignment is random conditional on observed covariates X"
+        formula: "Y(1), Y(0) ⊥ T | X"
+        testable: false
+        plausibility: "High - we control for rich set of covariates"
+        
+      common_support:
+        description: "Overlap in propensity scores between treatment and control"
+        formula: "0 < P(T=1|X) < 1 for all X"
+        testable: true
+        test_method: "Plot propensity score distributions"
+        
+      sutva:
+        description: "Stable Unit Treatment Value Assumption - no spillover effects"
+        formula: "Y_i(T) = Y_i(T_i) for all T"
+        plausibility: "High - emails targeted to individuals, no network effects"
+        
+      positivity:
+        description: "Every unit has positive probability of treatment"
+        formula: "P(T=1|X) > 0 and P(T=0|X) > 0 for all X"
+        testable: true
+        test_method: "Check min/max propensity scores by covariate strata"
+    
+    # Sensitivity Analysis
+    sensitivity_analysis:
+      methods:
+        - "Rosenbaum bounds"
+        - "Vary covariate specifications"
+        - "Placebo tests on pre-treatment outcomes"
+        - "Vary matching caliper"
+      
+      robustness_checks:
+        - "Different propensity score specifications"
+        - "Alternative matching algorithms (nearest neighbor, kernel)"
+        - "Different distance metrics (logit, linear)"
+        - "Stratification instead of matching"
+  
+  # Variables
+  variables:
+    outcome: 
+      name: "converted"
+      type: "binary"
+      
+    treatment: 
+      name: "received_email"
+      type: "binary"
+      
+    covariates:
+      required:
+        - name: "customer_segment"
+          importance: "HIGH"
+          reasoning: "Strong confounder - affects both treatment and outcome"
+          
+        - name: "age_group"
+          importance: "MEDIUM"
+          reasoning: "Demographic control"
+          
+        - name: "total_purchases"
+          importance: "HIGH"
+          reasoning: "Purchase history strongly predicts future purchases"
+          
+        - name: "recency_bin"
+          importance: "HIGH"
+          reasoning: "Recent purchasers less likely to convert"
+          
+        - name: "email_opens_last_90_days"
+          importance: "HIGH"
+          reasoning: "Engagement proxy - confounds treatment assignment"
+          
+        - name: "email_clicks_last_90_days"
+          importance: "MEDIUM-HIGH"
+          reasoning: "Intent signal - strong confounder"
+          
+      optional:
+        - "gender"
+        - "region"
+        - "weekend_flag"
+        - "holiday_season"
+        - "urban_rural"
+        
+  # Propensity Score Specification
+  propensity_score:
+    model: "Logistic Regression"
+    formula: |
+      logit(P(T=1|X)) = β0 + β1*customer_segment + β2*age_group + 
+                         β3*total_purchases + β4*recency_bin + 
+                         β5*email_opens_last_90_days + β6*email_clicks_last_90_days
+    
+    diagnostics:
+      - "Check propensity score overlap"
+      - "Assess covariate balance before/after matching"
+      - "Standardized mean differences < 0.1"
+      - "Variance ratios between 0.8 and 1.2"
+    
+  # Matching Specification
+  matching_specification:
+    method: "Nearest Neighbor Matching"
+    distance_metric: "Logit of propensity score"
+    ratio: "1:1"
+    caliper: 0.2  # in standard deviations of logit propensity score
+    replacement: false
+    common_support: "Trim observations outside common support"
+    
+  # Treatment Effect Estimation
+  estimands:
+    primary: 
+      name: "Average Treatment Effect on Treated (ATT)"
+      description: "Effect of email on those who received email"
+      formula: "E[Y(1) - Y(0) | T=1]"
+      business_relevance: "What is the impact on customers we actually emailed?"
+      
+    secondary:
+      name: "Average Treatment Effect (ATE)"
+      description: "Average effect across entire population"
+      formula: "E[Y(1) - Y(0)]"
+      business_relevance: "What would be impact if we emailed everyone?"
+  
+  # Expected Results
+  expected_results:
+    att:
+      point_estimate: 0.045
+      range: [0.03, 0.08]
+      interpretation: "3-8 percentage point increase in conversion rate"
+      
+    statistical_significance:
+      alpha: 0.05
+      power: 0.80
+      minimum_detectable_effect: 0.02
+      
+    effect_size:
+      cohens_d: 0.3
+      interpretation: "Small to medium effect size"
+  
+  # Sample Size Requirements
+  sample_size:
+    minimum_per_group: 5000
+    actual_control: 30000
+    actual_treatment: 70000
+    power_achieved: 0.95
+    
+  # Diagnostic Tests
+  diagnostic_tests:
+    - name: "Covariate Balance"
+      method: "Standardized mean differences"
+      threshold: 0.1
+      
+    - name: "Common Support"
+      method: "Propensity score distribution plots"
+      action: "Trim observations outside [0.1, 0.9]"
+      
+    - name: "Placebo Test"
+      method: "Test for treatment effect on pre-treatment outcomes"
+      expected: "No significant effect"
+      
+    - name: "Sensitivity Analysis"
+      method: "Rosenbaum bounds"
+      tolerance: "Gamma up to 2.0"
+  
+  # Heterogeneous Treatment Effects
+  heterogeneous_effects:
+    subgroups:
+      - "customer_segment"
+      - "age_group"
+      - "country"
+      - "recency_bin"
+      
+    expected_heterogeneity:
+      customer_segment:
+        Customer: "Low effect (0.02)"
+        Lapsed: "High effect (0.08)"
+        Non-Customer: "Medium effect (0.04)"
+        Prospect: "High effect (0.07)"
+        
+  # Reporting Requirements
+  reporting_requirements:
+    tables:
+      - "Descriptive statistics by treatment status"
+      - "Propensity score distribution"
+      - "Covariate balance (before/after matching)"
+      - "Treatment effect estimates with confidence intervals"
+      - "Subgroup analysis"
+      
+    figures:
+      - "Propensity score distribution plot"
+      - "Common support plot"
+      - "Covariate balance plot (Love plot)"
+      - "Treatment effect by subgroup (forest plot)"
+      
+    report_sections:
+      - "Executive Summary"
+      - "Data Description"
+      - "Methodology"
+      - "Results"
+      - "Sensitivity Analysis"
+      - "Business Implications"
+      - "Recommendations"
+
+# ============================================================================
+# DATA QUALITY RULES - PRODUCTION GRADE
+# ============================================================================
+data_quality:
+  # Completeness Thresholds
+  completeness_thresholds:
+    critical_fields: 100%  # converted, received_email, cdb_cust_id
+    required_fields: 95%   # age_group, customer_segment
+    important_fields: 80%  # email engagement, demographics
+    optional_fields: 30%   # days_since_last_service
+  
+  # Validation Rules
+  validation_rules:
+    # Critical Business Rules
+    - rule_id: "VR001"
+      rule: "converted IN (0, 1)"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      
+    - rule_id: "VR002"
+      rule: "received_email IN (0, 1)"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      
+    - rule_id: "VR003"
+      rule: "IF converted = 1 THEN purchase_date IS NOT NULL"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      message: "Converters must have purchase date"
+      
+    - rule_id: "VR004"
+      rule: "IF received_email = 1 THEN email_send_date IS NOT NULL"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      message: "Treatment group must have email send date"
+      
+    - rule_id: "VR005"
+      rule: "IF converted = 1 AND received_email = 1 THEN purchase_date >= email_send_date"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      message: "Purchase must occur after email for valid causal inference"
+      
+    - rule_id: "VR006"
+      rule: "email_clicks_last_90_days <= email_opens_last_90_days"
+      severity: "WARNING"
+      action: "LOG_WARNING"
+      alert: true
+      message: "Clicks cannot exceed opens"
+      
+    - rule_id: "VR007"
+      rule: "total_purchases >= 0"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      
+    - rule_id: "VR008"
+      rule: "customer_segment IN ('Customer', 'Lapsed', 'Non-Customer', 'Prospect')"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      
+    - rule_id: "VR009"
+      rule: "reference_date IS NOT NULL AND reference_date <= CURRENT_DATE()"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      
+    - rule_id: "VR010"
+      rule: "cdb_cust_id IS NOT NULL AND cdb_cust_id > 0"
+      severity: "CRITICAL"
+      action: "REJECT_ROW"
+      alert: true
+      
+    # Distribution Checks
+    - rule_id: "VR011"
+      rule: "conversion_rate BETWEEN 0.08 AND 0.20"
+      severity: "WARNING"
+      action: "ALERT_ONLY"
+      alert: true
+      message: "Conversion rate outside expected range [8%, 20%]"
+      
+    - rule_id: "VR012"
+      rule: "treatment_proportion BETWEEN 0.65 AND 0.75"
+      severity: "WARNING"
+      action: "ALERT_ONLY"
+      alert: true
+      message: "Treatment proportion outside expected range [65%, 75%]"
+      
+  # Outlier Detection
+  outlier_detection:
+    - field: "email_opens_last_90_days"
+      method: "IQR"
+      threshold: "Q3 + 3*IQR"
+      action: "Flag for review"
+      max_outliers_pct: 1%
+      
+    - field: "email_clicks_last_90_days"
+      method: "Fixed threshold"
+      threshold: 20
+      action: "Cap at 20"
+      
+    - field: "total_purchases"
+      method: "Fixed threshold"
+      threshold: 10
+      action: "Cap at 10 and log warning"
+      
+  # Consistency Checks
+  consistency_checks:
+    - check: "Customer segment matches purchase history"
+      rule: "IF customer_segment = 'Customer' THEN total_purchases > 0"
+      severity: "WARNING"
+      
+    - check: "Lapsed customers have old purchases"
+      rule: "IF customer_segment = 'Lapsed' THEN recency_bin IN ('1-2y', '>2y')"
+      severity: "WARNING"
+      
+    - check: "Treatment group balance"
+      rule: "ABS(treatment_proportion - 0.70) < 0.05"
+      severity: "WARNING"
+      
+  # Freshness Checks
+  freshness_checks:
+    - check: "Data not stale"
+      rule: "MAX(extract_date) >= CURRENT_DATE() - 2"
+      severity: "WARNING"
+      alert: true
+      message: "Data is more than 2 days old"
+      
+  # Duplicate Checks
+  duplicate_checks:
+    - check: "No duplicate customers per period"
+      rule: "COUNT(*) = COUNT(DISTINCT cdb_cust_id, extract_date)"
+      severity: "CRITICAL"
+      action: "REJECT_BATCH"
+
+# ============================================================================
+# MONITORING & ALERTING - PRODUCTION
+# ============================================================================
+monitoring:
+  # Data Quality Metrics
+  data_quality_metrics:
+    - metric: "row_count"
+      expected_range: [100000, 200000]
+      alert_threshold: "outside_range"
+      
+    - metric: "null_rate_converted"
+      expected_max: 0.001
+      alert_threshold: "> 0.01"
+      
+    - metric: "conversion_rate"
+      expected_range: [0.08, 0.20]
+      alert_threshold: "outside_range"
+      
+    - metric: "treatment_proportion"
+      expected_range: [0.65, 0.75]
+      alert_threshold: "outside_range"
+      
+  # Pipeline Metrics
+  pipeline_metrics:
+    - metric: "etl_duration_minutes"
+      expected_max: 180
+      alert_threshold: "> 240"
+      
+    - metric: "data_freshness_hours"
+      expected_max: 24
+      alert_threshold: "> 48"
+      
+    - metric: "failed_validation_rules"
+      expected_max: 0
+      alert_threshold: "> 5"
+      
+  # Business Metrics
+  business_metrics:
+    - metric: "daily_conversions"
+      expected_range: [150, 300]
+      alert_threshold: "outside_range"
+      
+    - metric: "treatment_conversions"
+      expected_min: 100
+      alert_threshold: "< 100"
+      
+  # Alert Configuration
+  alerts:
+    critical:
+      channels: ["PagerDuty", "Slack #data-critical"]
+      recipients: ["data-engineering@company.com", "analytics-lead@company.com"]
+      sla_response_time: "1 hour"
+      escalation_after: "2 hours"
+      
+    warning:
+      channels: ["Slack #data-alerts", "Email"]
+      recipients: ["analytics-team@company.com"]
+      sla_response_time: "4 hours"
+      
+    info:
+      channels: ["Slack #data-monitoring"]
+      recipients: ["analytics-team@company.com"]
+      
+  # Dashboards
+  dashboards:
+    - name: "Data Quality Dashboard"
+      url: "https://tableau.company.com/data-quality"
+      refresh_frequency: "Hourly"
+      
+    - name: "Pipeline Health Dashboard"
+      url: "https://grafana.company.com/pipeline-health"
+      refresh_frequency: "Real-time"
+
+# ============================================================================
+# SLA & PERFORMANCE
+# ============================================================================
+sla:
+  availability:
+    target: "99.5%"
+    measurement_period: "Monthly"
+    downtime_threshold: "4 hours per month"
+    
+  data_freshness:
+    target: "Available by 09:00 UTC every Monday"
+    tolerance: "+2 hours"
+    measurement: "Time when table is fully refreshed"
+    
+  query_performance:
+    p50_latency: "< 5 seconds"
+    p95_latency: "< 30 seconds"
+    p99_latency: "< 60 seconds"
+    
+  data_quality:
+    validation_pass_rate: "> 99%"
+    critical_errors: "0 per refresh"
+    warning_errors: "< 10 per refresh"
+
+# ============================================================================
+# ACCESS CONTROL & SECURITY
+# ============================================================================
+security:
+  access_control:
+    read_access:
+      roles: ["MARKETING_ANALYTICS", "DATA_SCIENCE", "BUSINESS_INTELLIGENCE"]
+      approval_required: false
+      
+    write_access:
+      roles: ["DATA_ENGINEERING"]
+      approval_required: true
+      approver: "Data Governance Team"
+      
+  data_classification: "CONFIDENTIAL"
+  
+  compliance:
+    gdpr:
+      applicable: true
+      data_subject_rights: "Right to erasure, right to access"
+      retention_period: "2 years"
+      
+    ccpa:
+      applicable: true
+      consumer_rights: "Right to know, right to delete"
+      
+  audit:
+    enabled: true
+    log_queries: true
+    log_access: true
+    retention_days: 90
+
+# ============================================================================
+# DEPENDENCIES & LINEAGE
+# ============================================================================
+dependencies:
+  upstream_tables:
+    - table: "PLAYGROUND_LM.TRF.TRF_CDB_PREFILTERED"
+      criticality: "HIGH"
+      sla: "Daily by 05:00 UTC"
+      contact: "crm-team@company.com"
+      
+    - table: "PLAYGROUND_LM.SALESFORCE.SF_ORDER_HISTORY"
+      criticality: "HIGH"
+      sla: "Hourly"
+      contact: "salesforce-admin@company.com"
+      
+    - table: "PLAYGROUND_LM.MARKETING_CLOUD.SFMC_SENT"
+      criticality: "HIGH"
+      sla: "Hourly"
+      contact: "martech-team@company.com"
+      
+  downstream_consumers:
+    - consumer: "Tableau Marketing Dashboard"
+      type: "BI Tool"
+      contact: "bi-team@company.com"
+      usage: "Daily executive reporting"
+      
+    - consumer: "Python ML Models"
+      type: "Data Science"
+      contact: "data-science@company.com"
+      usage: "Incrementality modeling"
+      
+    - consumer: "Looker Reports"
+      type: "BI Tool"
+      contact: "bi-team@company.com"
+      usage: "Ad-hoc analysis"
+
+# ============================================================================
+# USAGE EXAMPLES - PRODUCTION
+# ============================================================================
+sample_queries:
+  basic_descriptives: |
+    -- Production descriptive statistics
+    SELECT 
+        COUNT(*) as total_customers,
+        SUM(converted) as total_conversions,
+        ROUND(SUM(converted) * 100.0 / COUNT(*), 2) as conversion_rate_pct,
+        SUM(received_email) as total_treated,
+        ROUND(SUM(received_email) * 100.0 / COUNT(*), 2) as treatment_pct,
+        MAX(extract_date) as data_as_of_date
+    FROM PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_PROD
+    WHERE extract_date = (SELECT MAX(extract_date) FROM PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_PROD);
+    
+  treatment_control_comparison: |
+    -- Compare treatment vs control (NAIVE - selection bias present)
+    SELECT 
+        received_email,
+        COUNT(*) as n,
+        SUM(converted) as conversions,
+        ROUND(SUM(converted) * 100.0 / COUNT(*), 2) as conversion_rate_pct,
+        ROUND(AVG(email_opens_last_90_days), 2) as avg_opens,
+        ROUND(AVG(total_purchases), 2) as avg_purchases
+    FROM PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_PROD
+    WHERE extract_date = CURRENT_DATE() - 1
+    GROUP BY received_email
+    ORDER BY received_email;
+    
+  data_quality_check: |
+    -- Production data quality validation
+    SELECT 
+        'Total Rows' as check_name,
+        COUNT(*) as value,
+        CASE WHEN COUNT(*) BETWEEN 100000 AND 200000 THEN 'PASS' ELSE 'FAIL' END as status
+    FROM PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_PROD
+    
+    UNION ALL
+    
+    SELECT 
+        'Conversion Rate',
+        ROUND(SUM(converted) * 100.0 / COUNT(*), 2),
+        CASE WHEN SUM(converted) * 100.0 / COUNT(*) BETWEEN 8 AND 20 THEN 'PASS' ELSE 'FAIL' END
+    FROM PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_PROD
+    
+    UNION ALL
+    
+    SELECT 
+        'Treatment Proportion',
+        ROUND(SUM(received_email) * 100.0 / COUNT(*), 2),
+        CASE WHEN SUM(received_email) * 100.0 / COUNT(*) BETWEEN 65 AND 75 THEN 'PASS' ELSE 'FAIL' END
+    FROM PLAYGROUND_LM.GCP_REPORTING_ORCHESTRATOR.INCREMENTALITY_ANALYSIS_PROD;
+
+# ============================================================================
+# CHANGE LOG
+# ============================================================================
+change_log:
+  - version: "2.0"
+    date: "2024-11-25"
+    author: "Data Engineering Team"
+    jira_ticket: "ANALYTICS-1235"
+    changes:
+      - "Added production monitoring and alerting specifications"
+      - "Enhanced data quality rules with 12 validation rules"
+      - "Added SLA definitions and performance targets"
+      - "Expanded statistical analysis framework"
+      - "Added security and compliance specifications"
+      - "Added dependency tracking and lineage"
+      - "Enhanced documentation with business context"
+    approved_by: "Data Governance Committee"
+    
+  - version: "1.0"
+    date: "2024-11-24"
+    author: "Analytics Team"
+    changes:
+      - "Initial comprehensive semantic model"
+      - "Basic field definitions"
+      - "Statistical specifications"
+    approved_by: "Analytics Lead"
+
+# ============================================================================
+# NOTES & BEST PRACTICES
+# ============================================================================
+notes:
+  best_practices:
+    - "Always use reference_date for temporal calculations to avoid post-treatment bias"
+    - "Control for all listed confounders in causal analysis"
+    - "Check covariate balance after matching (SMD < 0.1)"
+    - "Conduct sensitivity analysis to test robustness"
+    - "Report confidence intervals, not just point estimates"
+    
+  common_pitfalls:
+    - "❌ Comparing naive conversion rates (selection bias)"
+    - "❌ Using post-treatment covariates (post-treatment bias)"
+    - "❌ Ignoring common support violations"
+    - "❌ Not checking covariate balance"
+    - "❌ Interpreting correlation as causation"
+    
+  troubleshooting:
+    - issue: "Low covariate balance after matching"
+      solution: "Add more covariates or use different matching algorithm"
+      
+    - issue: "Poor common support overlap"
+      solution: "Trim observations outside common support region"
+      
+    - issue: "Unexpected treatment effect"
+      solution: "Check for data quality issues, verify temporal ordering"
+
+# ============================================================================
+# END OF SEMANTIC MODEL
+# ============================================================================
